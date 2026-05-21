@@ -1,8 +1,5 @@
-package net.soeki
-
-import io.ktor.server.engine.*
-import io.ktor.server.application.*
+import io.ktor.server.cio.EngineMain
 
 fun main(args: Array<String>) {
-    io.ktor.server.cio.EngineMain.main(args)
+    EngineMain.main(args)
 }

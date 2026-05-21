@@ -36,7 +36,7 @@ dependencies {
     implementation(ktorLibs.server.statusPages)
     implementation(ktorLibs.server.websockets)
     implementation(libs.exposed.core)
-    implementation(libs.exposed.r2dbc)
+    implementation(libs.exposed.jdbc)
     implementation(libs.h2database.h2)
     implementation(libs.h2database.r2dbc)
     implementation(libs.logback.classic)

@@ -3,7 +3,6 @@ package db
 import db.tables.Country
 import db.tables.CountryName
 import db.tables.Quiz
-import db.tables.Topic
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -23,7 +22,6 @@ object DatabaseFactory {
             SchemaUtils.createMissingTablesAndColumns(
                 Country,
                 CountryName,
-                Topic,
                 Quiz
             )
         }

@@ -46,7 +46,7 @@ class CountryRepository {
                 .map {
                     CountryCandidate(
                         countryId   = it[Country.id],
-                        code        = it[Country.code],
+                        code        = it[Country.code2],
                         matchedName = it[CountryName.name],
                     )
                 }
@@ -73,7 +73,7 @@ class CountryRepository {
                 ?.let {
                     CountryCandidate(
                         countryId   = it[Country.id],
-                        code        = it[Country.code],
+                        code        = it[Country.code2],
                         matchedName = it[CountryName.name],
                     )
                 }

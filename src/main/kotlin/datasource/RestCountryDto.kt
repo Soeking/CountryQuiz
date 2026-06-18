@@ -20,14 +20,14 @@ data class Translations(
 )
 
 @Serializable
-data class Country(
+data class CountryWithName(
     val flags: Flag,
     val name: CountryName,
     val translations: Translations
 )
 
 @Serializable
-data class CountryCode(
+data class CountryWithCode(
     val name: CountryName,
     val cca2: String,
     val cca3: String

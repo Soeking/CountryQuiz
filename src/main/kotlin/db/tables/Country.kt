@@ -1,13 +1,10 @@
 package db.tables
 
-import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 
 /** 国マスタ */
-object Country : Table("country") {
-    val id = integer("id").autoIncrement()
+object Country : LongIdTable("country") {
     val code2 = varchar("code", 2).uniqueIndex()
     val code3 = varchar("code", 3).uniqueIndex()
-    val japaneseName = varchar("name", 50)
-
-    override val primaryKey = PrimaryKey(id)
+    val officialName = varchar("name", 50)
 }

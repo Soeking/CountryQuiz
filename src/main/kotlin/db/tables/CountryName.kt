@@ -1,16 +1,14 @@
 package db.tables
 
 import org.jetbrains.exposed.v1.core.ReferenceOption
-import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 
 /**
  * 国名候補
  * 1カ国につき複数の表記を登録する
- * 例: United States / America / Amerika / USA
  */
-object CountryName : Table("country_name") {
-    val id = integer("id").autoIncrement()
-    val countryId = integer("country_id")
+object CountryName : LongIdTable("country_name") {
+    val countryId = long("country_id")
         .references(Country.id, onDelete = ReferenceOption.CASCADE)
     /** 表示用の名称  例: "United States" */
     val name = varchar("name", 100)
@@ -20,6 +18,4 @@ object CountryName : Table("country_name") {
      * 例: "unitedstates" / "america" / "usa"
      */
     val searchKey = varchar("search_key", 100)
-
-    override val primaryKey = PrimaryKey(id)
 }

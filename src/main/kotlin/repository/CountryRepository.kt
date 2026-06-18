@@ -11,7 +11,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import util.normalizeSearchKey
 
 data class CountryCandidate(
-    val countryId: Int,
+    val countryId: Long,
     val code: String,
     /** 表示用の名称（ヒットした表記を返す） */
     val matchedName: String,
@@ -45,7 +45,7 @@ class CountryRepository {
                 .take(limit)
                 .map {
                     CountryCandidate(
-                        countryId   = it[Country.id],
+                        countryId   = it[Country.id].value,
                         code        = it[Country.code2],
                         matchedName = it[CountryName.name],
                     )
@@ -58,7 +58,7 @@ class CountryRepository {
     /**
      * country_id から候補を1件取得する
      */
-    fun findById(id: Int): CountryCandidate? {
+    fun findById(id: Long): CountryCandidate? {
         return transaction {
             Country
                 .join(
@@ -72,7 +72,7 @@ class CountryRepository {
                 .firstOrNull()
                 ?.let {
                     CountryCandidate(
-                        countryId   = it[Country.id],
+                        countryId   = it[Country.id].value,
                         code        = it[Country.code2],
                         matchedName = it[CountryName.name],
                     )

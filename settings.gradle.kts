@@ -2,6 +2,7 @@ rootProject.name = "QuizeCountry"
 
 pluginManagement {
     repositories {
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
@@ -9,6 +10,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        google()
         mavenCentral()
     }
     versionCatalogs {
@@ -16,6 +18,6 @@ dependencyResolutionManagement {
     }
 }
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
+include(":shared")
+include(":server")
+include(":web")

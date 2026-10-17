@@ -34,10 +34,12 @@ fun seedCountries() {
             }?.value ?: return@forEach
 
             countryWithNames.filter { it.name.official == code.name.official }.forEach { name ->
-                CountryName.insertIgnore {
-                    it[CountryName.countryId] = insertedId
-                    it[CountryName.name] = name.translations.jpn.official
-                    it[CountryName.searchKey] = normalizeSearchKey(name.translations.jpn.official)
+                name.translations.jpn?.let { jpn ->
+                    CountryName.insertIgnore {
+                        it[CountryName.countryId] = insertedId
+                        it[CountryName.name] = jpn.official
+                        it[CountryName.searchKey] = normalizeSearchKey(jpn.official)
+                    }
                 }
                 CountryName.insertIgnore {
                     it[CountryName.countryId] = insertedId

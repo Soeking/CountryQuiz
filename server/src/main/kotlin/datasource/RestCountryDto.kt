@@ -16,7 +16,8 @@ data class CountryName(
 
 @Serializable
 data class Translations(
-    val jpn: CountryName
+    /** 日本語訳がない国もある */
+    val jpn: CountryName? = null
 )
 
 @Serializable

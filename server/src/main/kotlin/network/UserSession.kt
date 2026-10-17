@@ -1,4 +1,4 @@
-package net.soeki.Network
+package network
 
 import kotlinx.serialization.Serializable
 

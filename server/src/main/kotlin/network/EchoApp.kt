@@ -1,4 +1,4 @@
-package net.soeki.Network
+package network
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*

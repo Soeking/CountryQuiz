@@ -1,60 +1,30 @@
-package net.soeki.Network
+package network
 
+import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.http.content.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.resources.*
-import io.ktor.server.auth.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
-import io.ktor.server.http.content.*
-import io.ktor.server.sessions.*
-import io.ktor.server.sse.*
-import io.ktor.sse.*
+import repository.CountryRepository
 
-fun Application.configureRouting() {
+fun Application.configureRouting(countryRepository: CountryRepository = CountryRepository()) {
     routing {
-        get("/") {
-            call.respondText("Hello, World!")
-        }
-        get<Articles> { article ->
-            // Get all articles ...
-            call.respond("List of articles sorted starting from ${article.sort}")
-        }
-        authenticate("myauth1") {
-            get("/protected/route/basic") {
-                val principal = call.principal<UserIdPrincipal>()!!
-                call.respondText("Hello ${principal.name}")
+        route("/api") {
+            get("/countries/search") {
+                val query = call.request.queryParameters["q"].orEmpty()
+                call.respond(countryRepository.search(query))
+            }
+            // 未定義の /api/** は SPA にフォールバックさせず 404 を返す
+            route("{...}") {
+                handle { call.respond(HttpStatusCode.NotFound) }
             }
         }
-        authenticate("myauth2") {
-            get("/protected/route/form") {
-                val principal = call.principal<UserIdPrincipal>()!!
-                call.respondText("Hello ${principal.name}")
-            }
-        }
-        webSocket("/ws") { // websocketSession
-            for (frame in incoming) {
-                if (frame is Frame.Text) {
-                    val text = frame.readText()
-                    outgoing.send(Frame.Text("YOU SAID: $text"))
-                    if (text.equals("bye", ignoreCase = true)) {
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
-                    }
-                }
-            }
-        }
-        staticResources("/static", "static")
-        get("/json/kotlinx-serialization") {
-            call.respond(mapOf("hello" to "world"))
-        }
-        get("/session/increment") {
-            val session = call.sessions.get<UserSession>() ?: UserSession()
-            call.sessions.set(session.copy(count = session.count + 1))
-            call.respondText("Counter is ${session.count}. Refresh to increment.")
-        }
-        sse("/hello") {
-            send(ServerSentEvent("world"))
+
+        // web モジュールの wasm ビルド結果（resources/web）を配信する
+        singlePageApplication {
+            useResources = true
+            filesPath = "web"
+            defaultPage = "index.html"
         }
     }
 }

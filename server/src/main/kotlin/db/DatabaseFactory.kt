@@ -11,14 +11,12 @@ object DatabaseFactory {
 
     fun init(dbPath: String = "./quiz.db") {
         Database.connect(
-            url = "jdbc:sqlite:$dbPath",
+            // SQLite は外部キー制約がデフォルトで無効なので、接続ごとに有効化する
+            url = "jdbc:sqlite:$dbPath?foreign_keys=on",
             driver = "org.sqlite.JDBC",
         )
 
         transaction {
-            // SQLite は外部キー制約がデフォルトで無効なので有効化する
-            exec("PRAGMA foreign_keys = ON;")
-
             SchemaUtils.createMissingTablesAndColumns(
                 Country,
                 CountryName,

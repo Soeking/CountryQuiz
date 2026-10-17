@@ -1,4 +1,4 @@
-package net.soeki.Network
+package network
 
 import io.ktor.server.application.*
 import io.ktor.http.*

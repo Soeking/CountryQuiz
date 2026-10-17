@@ -2,6 +2,7 @@ package repository
 
 import db.tables.Country
 import db.tables.CountryName
+import dto.CountryCandidate
 import org.jetbrains.exposed.v1.core.Join
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.eq
@@ -9,13 +10,6 @@ import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import util.normalizeSearchKey
-
-data class CountryCandidate(
-    val countryId: Long,
-    val code: String,
-    /** 表示用の名称（ヒットした表記を返す） */
-    val matchedName: String,
-)
 
 class CountryRepository {
 

@@ -3,17 +3,4 @@ ktor:
     port: 8080
   application:
     modules:
-      - net.soeki.HttpKt.configureHttp
-      - net.soeki.SerializationKt.configureSerialization
-      - net.soeki.SecurityKt.configureSecurity
-      - net.soeki.RequestValidationKt.configureRequestValidation
-      - net.soeki.ResourcesKt.configureResources
-      - net.soeki.SseKt.configureSse
-      - net.soeki.StatusPagesKt.configureStatusPages
-      - net.soeki.DIKt.configureDependencyInjection
-      - net.soeki.ExposedKt.configureExposed
-      - net.soeki.WebsocketsKt.configureWebsockets
-      - net.soeki.NetworkKt.configureNetwork
-      - net.soeki.NetworkTlsKt.configureNetworkTls
-      - net.soeki.AutoHeadResponseKt.configureAutoHeadResponse
-      - net.soeki.RoutingKt.configureRouting
+      - MainKt.module

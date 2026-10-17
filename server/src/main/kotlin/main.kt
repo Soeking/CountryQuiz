@@ -1,8 +1,19 @@
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
+import db.DatabaseFactory
+import db.seed.seedCountries
+import io.ktor.server.application.*
+import io.ktor.server.cio.*
+import network.configureRouting
+import network.configureSerialization
+import network.configureStatusPages
 
-fun main() {
-    embeddedServer(CIO, port = 8080) {
-        // モジュール設定
-    }.start(wait = true)
+fun main(args: Array<String>) = EngineMain.main(args)
+
+/** application.yaml の ktor.application.modules から呼ばれる */
+fun Application.module() {
+    DatabaseFactory.init()
+    seedCountries()
+
+    configureSerialization()
+    configureStatusPages()
+    configureRouting()
 }

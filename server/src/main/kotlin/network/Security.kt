@@ -1,4 +1,4 @@
-package net.soeki.Network
+package network
 
 import io.ktor.server.application.*
 import com.auth0.jwt.JWT

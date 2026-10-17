@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
@@ -8,7 +10,20 @@ plugins {
 kotlin {
     @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
-        browser()
+        browser {
+            commonWebpackConfig {
+                // 開発時は 8081 で配信し、/api/** は Ktor server (8080) に転送する
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                    port = 8081
+                    proxy = mutableListOf(
+                        KotlinWebpackConfig.DevServer.Proxy(
+                            context = mutableListOf("/api"),
+                            target = "http://localhost:8080",
+                        )
+                    )
+                }
+            }
+        }
         binaries.executable()
     }
 
@@ -30,5 +45,17 @@ kotlin {
                 implementation(libs.ktor.serialization.kotlinx.json)
             }
         }
+    }
+}
+
+// 本番用の wasm ビルド結果を server モジュールに渡すための configuration
+val webDistribution by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+}
+
+artifacts {
+    add(webDistribution.name, layout.buildDirectory.dir("dist/wasmJs/productionExecutable")) {
+        builtBy("wasmJsBrowserDistribution")
     }
 }

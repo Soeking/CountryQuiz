@@ -14,8 +14,25 @@ application {
 kotlin {
     jvmToolchain(21)
 }
+
+// web モジュールの wasm ビルド結果を resources/web として同梱する
+val webDistribution by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+val copyWebDistribution by tasks.registering(Sync::class) {
+    from(webDistribution) { into("web") }
+    into(layout.buildDirectory.dir("generated/webResources"))
+}
+
+sourceSets.main {
+    resources.srcDir(copyWebDistribution)
+}
+
 dependencies {
     implementation(project(":shared"))
+    webDistribution(project(path = ":web", configuration = "webDistribution"))
 
     implementation(ktorLibs.network.tls)
     implementation(ktorLibs.serialization.kotlinx.json)
@@ -41,6 +58,7 @@ dependencies {
     implementation(libs.h2database.h2)
     implementation(libs.h2database.r2dbc)
     implementation(libs.logback.classic)
+    implementation(libs.sqlite.jdbc)
     implementation(libs.ucasoft.ktorSimpleCache)
 
     testImplementation(kotlin("test"))

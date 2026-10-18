@@ -2,5 +2,6 @@ package network
 
 import kotlinx.serialization.Serializable
 
+/** web クライアントを配信したときに発行するセッション（Cookie は署名済み） */
 @Serializable
-data class UserSession(val count: Int = 0)
+data class ClientSession(val id: String)

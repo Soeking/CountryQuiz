@@ -15,7 +15,13 @@ private val json = Json {
     coerceInputValues = true
 }
 
-fun seedCountries() {
+/**
+ * resources/seed の JSON から国マスタと国名候補を登録する
+ * 登録済みの国はスキップするので、何度呼んでもよい
+ *
+ * @return 新しく登録した国の数
+ */
+fun seedCountries(): Int {
     val countryCodeJson =
         object {}.javaClass.getResourceAsStream("/seed/country_code.json")?.bufferedReader()?.readText()
             ?: error("Cannot read countries.json")
@@ -24,14 +30,14 @@ fun seedCountries() {
     val countryWithCodes = json.decodeFromString<List<CountryWithCode>>(countryCodeJson)
     val countryWithNames = json.decodeFromString<List<CountryWithName>>(countryNameJson)
 
-    transaction {
-        countryWithCodes.forEach { code ->
+    val insertedCount = transaction {
+        countryWithCodes.count { code ->
             // countries テーブルに挿入
             val insertedId = Country.insertIgnoreAndGetId {
                 it[code2] = code.cca2
                 it[code3] = code.cca3
                 it[officialName] = code.name.official
-            }?.value ?: return@forEach
+            }?.value ?: return@count false
 
             countryWithNames.filter { it.name.official == code.name.official }.forEach { name ->
                 name.translations.jpn?.let { jpn ->
@@ -47,8 +53,10 @@ fun seedCountries() {
                     it[CountryName.searchKey] = normalizeSearchKey(name.name.official)
                 }
             }
+            true
         }
     }
 
-    println("Seeded ${countryWithCodes.size} countries.")
+    println("Seeded $insertedCount of ${countryWithCodes.size} countries.")
+    return insertedCount
 }

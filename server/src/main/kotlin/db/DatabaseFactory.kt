@@ -9,7 +9,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 object DatabaseFactory {
 
-    fun init(dbPath: String = "./quiz.db") {
+    fun init(dbPath: String) {
         Database.connect(
             // SQLite は外部キー制約がデフォルトで無効なので、接続ごとに有効化する
             url = "jdbc:sqlite:$dbPath?foreign_keys=on",

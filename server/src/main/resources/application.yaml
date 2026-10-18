@@ -4,3 +4,13 @@ ktor:
   application:
     modules:
       - MainKt.module
+
+database:
+  # 環境変数 DB_PATH が未設定の場合は ./quiz.db を使う
+  path: "$DB_PATH:./quiz.db"
+
+security:
+  # Cookie 署名用の鍵（16進文字列）。未設定の場合は起動ごとにランダム生成する
+  sessionSignKey: "$?SESSION_SIGN_KEY"
+  # HTTPS で公開するときは true にする
+  secureCookie: "$SECURE_COOKIE:false"

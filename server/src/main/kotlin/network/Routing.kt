@@ -1,6 +1,7 @@
 package network
 
 import db.seed.seedCountries
+import db.seed.seedFlagQuizzes
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -11,7 +12,7 @@ import kotlinx.serialization.Serializable
 import repository.CountryRepository
 
 @Serializable
-data class SeedResult(val insertedCountries: Int)
+data class SeedResult(val insertedCountries: Int, val insertedFlagQuizzes: Int)
 
 fun Application.configureRouting(countryRepository: CountryRepository = CountryRepository()) {
     routing {
@@ -23,7 +24,12 @@ fun Application.configureRouting(countryRepository: CountryRepository = CountryR
                     call.respond(countryRepository.search(query))
                 }
                 post("/admin/seed") {
-                    call.respond(SeedResult(insertedCountries = seedCountries()))
+                    call.respond(
+                        SeedResult(
+                            insertedCountries = seedCountries(),
+                            insertedFlagQuizzes = seedFlagQuizzes(),
+                        )
+                    )
                 }
             }
             // 未定義の /api/** は SPA にフォールバックさせず 404 を返す

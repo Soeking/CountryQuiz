@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Flag(
+    val png: String,
     val svg: String,
     val alt: String
 )

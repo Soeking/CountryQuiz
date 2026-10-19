@@ -4,6 +4,9 @@ plugins {
 }
 
 kotlin {
+    // server と同じ JDK でビルドする（新しい JDK でビルドすると server の実行時に読み込めない）
+    jvmToolchain(21)
+
     // server（JVM）と web（WasmJs）の両方から参照できるようにする
     jvm()
     wasmJs {

@@ -14,7 +14,7 @@ import util.normalizeSearchKey
 class CountryRepository {
 
     /**
-     * 入力文字列を正規化して country_names を前方一致検索する
+     * 入力文字列を正規化して country_names を部分一致検索する（前方一致を優先して並べる）
      * 同一国が複数ヒットしても 1 件にまとめて返す
      *
      * @param input  ユーザーの入力文字列（正規化前）
@@ -33,8 +33,11 @@ class CountryRepository {
                     otherColumn = CountryName.countryId,
                 )
                 .selectAll()
-                .where { CountryName.searchKey like "$normalized%" }
+                // 正規化で % や _ は除去済みなので、エスケープは不要
+                .where { CountryName.searchKey like "%$normalized%" }
                 .orderBy(CountryName.searchKey)
+                // 前方一致する表記を優先する
+                .sortedByDescending { it[CountryName.searchKey].startsWith(normalized) }
                 .distinctBy { it[Country.id] }
                 .take(limit)
                 .map {

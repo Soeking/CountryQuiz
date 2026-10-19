@@ -5,9 +5,12 @@ import datasource.CountryWithName
 import db.tables.Country
 import db.tables.CountryName
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import util.normalizeSearchKey
 
 private val json = Json {
@@ -58,5 +61,24 @@ fun seedCountries(): Int {
     }
 
     println("Seeded $insertedCount of ${countryWithCodes.size} countries.")
+    refreshSearchKeys()
     return insertedCount
+}
+
+/**
+ * 登録済みの国名候補の search_key を、現在の normalizeSearchKey で作り直す
+ * 正規化ルールを変えたときに、既存データを再登録せずに追従させるため
+ */
+private fun refreshSearchKeys() {
+    val updatedCount = transaction {
+        CountryName.selectAll()
+            .map { Triple(it[CountryName.id].value, it[CountryName.name], it[CountryName.searchKey]) }
+            .count { (id, name, searchKey) ->
+                val normalized = normalizeSearchKey(name)
+                if (normalized == searchKey) return@count false
+                CountryName.update({ CountryName.id eq id }) { it[CountryName.searchKey] = normalized }
+                true
+            }
+    }
+    if (updatedCount > 0) println("Refreshed $updatedCount search keys.")
 }

@@ -39,10 +39,11 @@ kotlin {
                 implementation(compose.ui)
 
                 implementation(libs.navigation.compose)
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.js)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.serialization.kotlinx.json)
+                // shared が ktorLibs（3.4.0）を使うので、client も同じバージョンに揃える
+                implementation(ktorLibs.client.core)
+                implementation(ktorLibs.client.js)
+                implementation(ktorLibs.client.contentNegotiation)
+                implementation(ktorLibs.serialization.kotlinx.json)
             }
         }
     }

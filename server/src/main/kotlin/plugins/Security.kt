@@ -1,4 +1,4 @@
-package network
+package plugins
 
 import auth.CLIENT_HEADER_NAME
 import auth.CLIENT_HEADER_VALUE

@@ -1,7 +1,7 @@
 package db.seed
 
-import datasource.CountryWithCode
-import datasource.CountryWithName
+import db.seed.json.CountryWithCode
+import db.seed.json.CountryWithName
 import db.tables.Country
 import db.tables.CountryName
 import kotlinx.serialization.json.Json

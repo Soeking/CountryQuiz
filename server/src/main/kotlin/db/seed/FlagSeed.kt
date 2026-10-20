@@ -1,6 +1,6 @@
 package db.seed
 
-import datasource.CountryWithName
+import db.seed.json.CountryWithName
 import db.tables.Country
 import db.tables.Quiz
 import db.tables.QuizTopic

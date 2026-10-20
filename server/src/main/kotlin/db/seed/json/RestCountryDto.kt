@@ -1,4 +1,4 @@
-package datasource
+package db.seed.json
 
 import kotlinx.serialization.Serializable
 

@@ -3,10 +3,10 @@ import db.seed.seedCountries
 import db.seed.seedFlagQuizzes
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
-import network.configureRouting
-import network.configureSecurity
-import network.configureSerialization
-import network.configureStatusPages
+import plugins.configureSecurity
+import plugins.configureSerialization
+import plugins.configureStatusPages
+import routes.configureRouting
 
 fun main(args: Array<String>) = EngineMain.main(args)
 

@@ -1,5 +1,3 @@
-package net.soeki
-
 import auth.CLIENT_HEADER_NAME
 import auth.CLIENT_HEADER_VALUE
 import dto.AnswerResult

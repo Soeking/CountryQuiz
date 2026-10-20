@@ -1,6 +1,5 @@
-package net.soeki
+package util
 
-import util.normalizeSearchKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -51,3 +51,6 @@ replay_pid*
 
 # SQLite DB
 quiz.db
+
+# Kotlin Gradle plugin が生成するメタデータ・セッション
+.kotlin/

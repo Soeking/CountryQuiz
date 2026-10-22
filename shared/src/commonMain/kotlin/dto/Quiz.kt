@@ -23,6 +23,8 @@ data class AnswerRequest(
 @Serializable
 data class AnswerResult(
     val correct: Boolean,
-    /** 正解の国 */
+    /** 正解の国（正解が複数ある問題で正解した場合は、回答した国） */
     val answer: CountryCandidate,
+    /** answer 以外にも正解だった国（通貨クイズの「¥」の日本・中国など） */
+    val otherAnswers: List<CountryCandidate> = emptyList(),
 )

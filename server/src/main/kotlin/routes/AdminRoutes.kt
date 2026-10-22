@@ -1,6 +1,7 @@
 package routes
 
 import db.seed.seedCountries
+import db.seed.seedCurrencyQuizzes
 import db.seed.seedFlagQuizzes
 import db.seed.seedLanguageQuizzes
 import io.ktor.server.response.*
@@ -12,6 +13,7 @@ data class SeedResult(
     val insertedCountries: Int,
     val insertedFlagQuizzes: Int,
     val insertedLanguageQuizzes: Int,
+    val insertedCurrencyQuizzes: Int,
 )
 
 /** 管理用 API */
@@ -22,6 +24,7 @@ fun Route.adminRoutes() {
                 insertedCountries = seedCountries(),
                 insertedFlagQuizzes = seedFlagQuizzes(),
                 insertedLanguageQuizzes = seedLanguageQuizzes(),
+                insertedCurrencyQuizzes = seedCurrencyQuizzes(),
             )
         )
     }

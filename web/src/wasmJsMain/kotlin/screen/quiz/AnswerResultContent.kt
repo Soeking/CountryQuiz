@@ -57,6 +57,13 @@ internal fun AnswerResultContent(result: AnswerResult, isLast: Boolean, onNext: 
     )
     Spacer(Modifier.height(8.dp))
     Text(text = "正解は「${result.answer.matchedName}」", style = MaterialTheme.typography.bodyLarge)
+    if (result.otherAnswers.isNotEmpty()) {
+        Text(
+            text = "ほかに${result.otherAnswers.joinToString("") { "「${it.matchedName}」" }}も正解",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     Spacer(Modifier.height(24.dp))
     Button(onClick = ::next) { Text(if (isLast) "結果を見る" else "次の問題") }
 }

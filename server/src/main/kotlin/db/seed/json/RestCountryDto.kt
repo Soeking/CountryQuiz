@@ -24,10 +24,19 @@ data class Translations(
 )
 
 @Serializable
+data class Currency(
+    val name: String,
+    /** 記号のない通貨もある */
+    val symbol: String? = null,
+)
+
+@Serializable
 data class CountryWithName(
     val flags: Flag,
     val name: CountryName,
-    val translations: Translations
+    val translations: Translations,
+    /** 通貨（キーは ISO 4217 の通貨コード  例: "JPY"）。通貨のない国もある */
+    val currencies: Map<String, Currency> = emptyMap(),
 )
 
 @Serializable

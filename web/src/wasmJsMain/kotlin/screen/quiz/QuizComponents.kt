@@ -46,12 +46,15 @@ internal fun Header(title: String, questionNumber: Int, correctCount: Int, finis
     }
 }
 
+/** 大きく表示する短い出題文の文字数 */
+private const val SHORT_TEXT_LENGTH = 6
+
 /** 問題として表示する内容 */
 internal sealed interface QuestionContent {
     /** 国旗クイズの画像 */
     data class Image(val image: ImageBitmap) : QuestionContent
 
-    /** 言語クイズの現地語の国名（1 行に 1 つ） */
+    /** 言語クイズの現地語の国名（1 行に 1 つ）、通貨クイズの記号 */
     data class Text(val lines: List<String>) : QuestionContent
 }
 
@@ -76,9 +79,14 @@ internal fun QuestionCard(content: QuestionContent?) {
                     content.lines.forEach { line ->
                         Text(
                             text = line,
-                            // 公用語の多い国（最大 8 行）でも収まるよう、行が多いときは小さくする
-                            style = if (content.lines.size <= 3) MaterialTheme.typography.headlineMedium
-                            else MaterialTheme.typography.titleLarge,
+                            style = when {
+                                // 通貨記号のような短い 1 語は大きく見せる
+                                content.lines.size == 1 && line.length <= SHORT_TEXT_LENGTH ->
+                                    MaterialTheme.typography.displayLarge
+                                // 公用語の多い国（最大 8 行）でも収まるよう、行が多いときは小さくする
+                                content.lines.size <= 3 -> MaterialTheme.typography.headlineMedium
+                                else -> MaterialTheme.typography.titleLarge
+                            },
                             textAlign = TextAlign.Center,
                         )
                     }

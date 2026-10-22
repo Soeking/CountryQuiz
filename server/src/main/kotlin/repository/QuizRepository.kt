@@ -3,6 +3,7 @@ package repository
 import db.tables.Country
 import db.tables.CountryName
 import db.tables.Quiz
+import db.tables.QuizAnswer
 import db.tables.QuizTopic
 import dto.AnswerResult
 import dto.CountryCandidate
@@ -57,40 +58,54 @@ class QuizRepository {
 
     /**
      * 回答を判定する
+     * Quiz.countryId と、QuizAnswer に登録した別解の国を正解とする
      *
      * @return クイズが存在しない場合は null
      */
     fun judge(quizId: Long, countryId: Long): AnswerResult? {
         return transaction {
-            val answerCountryId = Quiz
+            val mainCountryId = Quiz
                 .select(Quiz.countryId)
                 .where { Quiz.id eq quizId }
                 .firstOrNull()
                 ?.get(Quiz.countryId)
                 ?: return@transaction null
+            val altCountryIds = QuizAnswer
+                .select(QuizAnswer.countryId)
+                .where { QuizAnswer.quizId eq quizId }
+                .orderBy(QuizAnswer.id to SortOrder.ASC)
+                .map { it[QuizAnswer.countryId] }
 
-            // seed で日本語名を先に登録しているので、id が最小の表記を表示名にする（日本語名がない国は英語名）
-            val answer = Country
-                .join(
-                    otherTable  = CountryName,
-                    joinType    = JoinType.INNER,
-                    onColumn    = Country.id,
-                    otherColumn = CountryName.countryId,
-                )
-                .selectAll()
-                .where { Country.id eq answerCountryId }
-                .orderBy(CountryName.id to SortOrder.ASC)
-                .firstOrNull()
-                ?.let {
-                    CountryCandidate(
-                        countryId   = it[Country.id].value,
-                        code        = it[Country.code2],
-                        matchedName = it[CountryName.name],
-                    )
-                }
-                ?: return@transaction null
+            val correctCountryIds = listOf(mainCountryId) + altCountryIds
+            val correct = countryId in correctCountryIds
+            // 別解で正解した場合は、回答した国を正解として先に表示する
+            val answers = correctCountryIds
+                .sortedByDescending { correct && it == countryId }
+                .mapNotNull(::findDisplayCountry)
+                .ifEmpty { return@transaction null }
 
-            AnswerResult(correct = answerCountryId == countryId, answer = answer)
+            AnswerResult(correct = correct, answer = answers.first(), otherAnswers = answers.drop(1))
         }
     }
+
+    /** 表示用の国。seed で日本語名を先に登録しているので、id が最小の表記を表示名にする（日本語名がない国は英語名） */
+    private fun findDisplayCountry(countryId: Long): CountryCandidate? =
+        Country
+            .join(
+                otherTable  = CountryName,
+                joinType    = JoinType.INNER,
+                onColumn    = Country.id,
+                otherColumn = CountryName.countryId,
+            )
+            .selectAll()
+            .where { Country.id eq countryId }
+            .orderBy(CountryName.id to SortOrder.ASC)
+            .firstOrNull()
+            ?.let {
+                CountryCandidate(
+                    countryId   = it[Country.id].value,
+                    code        = it[Country.code2],
+                    matchedName = it[CountryName.name],
+                )
+            }
 }

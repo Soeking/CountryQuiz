@@ -2,6 +2,8 @@ import auth.CLIENT_HEADER_NAME
 import auth.CLIENT_HEADER_VALUE
 import dto.AnswerResult
 import db.seed.LANGUAGE_QUIZ_NAME_SEPARATOR
+import db.tables.Quiz
+import db.tables.QuizTopic
 import dto.QuizQuestion
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
@@ -16,6 +18,10 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.*
 
 class ServerTest {
@@ -79,7 +85,7 @@ class ServerTest {
             header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
         }
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("{\"insertedCountries\":0,\"insertedFlagQuizzes\":0,\"insertedLanguageQuizzes\":0}", response.bodyAsText())
+        assertEquals("{\"insertedCountries\":0,\"insertedFlagQuizzes\":0,\"insertedLanguageQuizzes\":0,\"insertedCurrencyQuizzes\":0}", response.bodyAsText())
     }
 
     @Test
@@ -160,6 +166,54 @@ class ServerTest {
         assertFalse(result.correct)
         // 現地語の国名に、答えの国名（日本語名・英語名）そのものは含めない
         assertFalse(result.answer.matchedName in names, "${result.answer} / $names")
+    }
+
+    @Test
+    fun `currency quiz accepts every country using the symbol`() = testApplication {
+        configure()
+        val client = webClient()
+        val yenQuizId = transaction {
+            Quiz.select(Quiz.id).where { (Quiz.topic eq QuizTopic.CURRENCY) and (Quiz.hintText eq "¥") }.single()[Quiz.id].value
+        }
+
+        suspend fun answer(countryId: Long) = client.post("/api/quizzes/$yenQuizId/answer") {
+            header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+            contentType(ContentType.Application.Json)
+            setBody("{\"countryId\":$countryId}")
+        }.let { Json.decodeFromString<AnswerResult>(it.bodyAsText()) }
+
+        val wrong = answer(countryId = -1)
+        assertFalse(wrong.correct)
+        val answers = listOf(wrong.answer) + wrong.otherAnswers
+        assertEquals(setOf("JP", "CN"), answers.map { it.code }.toSet())
+
+        // どちらの国で答えても正解で、答えた国が先に表示される
+        answers.forEach { country ->
+            val result = answer(countryId = country.countryId)
+            assertTrue(result.correct)
+            assertEquals(country.countryId, result.answer.countryId)
+        }
+    }
+
+    @Test
+    fun `currency quiz skips symbols shared by many countries`() = testApplication {
+        configure()
+        val symbols = transaction {
+            Quiz.select(Quiz.hintText).where { Quiz.topic eq QuizTopic.CURRENCY }.mapNotNull { it[Quiz.hintText] }
+        }
+        assertContains(symbols, "₩")
+        assertFalse("$" in symbols || "€" in symbols, symbols.toString())
+    }
+
+    @Test
+    fun `currency quiz uses locally used symbols`() = testApplication {
+        configure()
+        val symbols = transaction {
+            Quiz.select(Quiz.hintText).where { Quiz.topic eq QuizTopic.CURRENCY }.mapNotNull { it[Quiz.hintText] }
+        }
+        assertTrue(symbols.containsAll(listOf("CHF", "ден", "1.000$00")), symbols.toString())
+        // country.json の表記（現地では使われていない）は出題しない
+        assertTrue(symbols.none { it in listOf("Fr.", "B/.", "Esc", "den") }, symbols.toString())
     }
 
     @Test

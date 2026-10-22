@@ -26,11 +26,7 @@ fun AppNavHost() {
         composable<TopRoute> {
             TopScreen(
                 onTopicSelected = { topic ->
-                    when (topic) {
-                        QuizTopic.FLAG, QuizTopic.LANGUAGE -> navController.navigate(QuizRoute(topic.name))
-                        // TODO: 通貨クイズを作ったら遷移する
-                        QuizTopic.CURRENCY -> println("selected: $topic")
-                    }
+                    navController.navigate(QuizRoute(topic.name))
                 },
             )
         }

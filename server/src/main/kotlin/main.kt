@@ -1,5 +1,6 @@
 import db.DatabaseFactory
 import db.seed.seedCountries
+import db.seed.seedCurrencyQuizzes
 import db.seed.seedFlagQuizzes
 import db.seed.seedLanguageQuizzes
 import io.ktor.server.application.*
@@ -17,6 +18,7 @@ fun Application.module() {
     seedCountries()
     seedFlagQuizzes()
     seedLanguageQuizzes()
+    seedCurrencyQuizzes()
 
     configureSerialization()
     configureStatusPages()

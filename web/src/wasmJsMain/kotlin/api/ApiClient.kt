@@ -5,7 +5,7 @@ import auth.CLIENT_HEADER_VALUE
 import dto.AnswerRequest
 import dto.AnswerResult
 import dto.CountryCandidate
-import dto.FlagQuiz
+import dto.QuizQuestion
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.js.Js
@@ -23,6 +23,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.browser.window
+import model.QuizTopic
 
 /**
  * server の API を呼び出すクライアント
@@ -63,12 +64,12 @@ object ApiClient {
     }
 
     /**
-     * 国旗クイズをランダムに 1 問取得する
+     * 指定した種類のクイズをランダムに 1 問取得する
      *
      * @param excludeIds 出題済みのクイズ id
      */
-    suspend fun randomFlagQuiz(excludeIds: List<Long>): FlagQuiz = withSession {
-        client.get("quizzes/flag/random") {
+    suspend fun randomQuiz(topic: QuizTopic, excludeIds: List<Long>): QuizQuestion = withSession {
+        client.get("quizzes/${topic.apiPath}/random") {
             if (excludeIds.isNotEmpty()) parameter("exclude", excludeIds.joinToString(","))
         }.body()
     }

@@ -1,4 +1,4 @@
-package screen.flagquiz
+package screen.quiz
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

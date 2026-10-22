@@ -4,16 +4,18 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import model.QuizTopic
-import screen.flagquiz.FlagQuizScreen
+import screen.quiz.QuizScreen
 import screen.top.TopScreen
 
 @Serializable
 private object TopRoute
 
+/** @param topicName QuizTopic の name */
 @Serializable
-private object FlagQuizRoute
+private data class QuizRoute(val topicName: String)
 
 /** 画面遷移の定義 */
 @Composable
@@ -25,15 +27,18 @@ fun AppNavHost() {
             TopScreen(
                 onTopicSelected = { topic ->
                     when (topic) {
-                        QuizTopic.FLAG -> navController.navigate(FlagQuizRoute)
-                        // TODO: 言語・通貨クイズの画面へ遷移する
-                        QuizTopic.LANGUAGE, QuizTopic.CURRENCY -> println("selected: $topic")
+                        QuizTopic.FLAG, QuizTopic.LANGUAGE -> navController.navigate(QuizRoute(topic.name))
+                        // TODO: 通貨クイズを作ったら遷移する
+                        QuizTopic.CURRENCY -> println("selected: $topic")
                     }
                 },
             )
         }
-        composable<FlagQuizRoute> {
-            FlagQuizScreen(onBack = { navController.popBackStack() })
+        composable<QuizRoute> { entry ->
+            QuizScreen(
+                topic = QuizTopic.valueOf(entry.toRoute<QuizRoute>().topicName),
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }

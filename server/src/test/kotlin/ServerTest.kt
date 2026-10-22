@@ -1,7 +1,8 @@
 import auth.CLIENT_HEADER_NAME
 import auth.CLIENT_HEADER_VALUE
 import dto.AnswerResult
-import dto.FlagQuiz
+import db.seed.LANGUAGE_QUIZ_NAME_SEPARATOR
+import dto.QuizQuestion
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -78,7 +79,7 @@ class ServerTest {
             header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
         }
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("{\"insertedCountries\":0,\"insertedFlagQuizzes\":0}", response.bodyAsText())
+        assertEquals("{\"insertedCountries\":0,\"insertedFlagQuizzes\":0,\"insertedLanguageQuizzes\":0}", response.bodyAsText())
     }
 
     @Test
@@ -103,7 +104,7 @@ class ServerTest {
 
         val quiz = client.get("/api/quizzes/flag/random") {
             header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
-        }.let { Json.decodeFromString<FlagQuiz>(it.bodyAsText()) }
+        }.let { Json.decodeFromString<QuizQuestion>(it.bodyAsText()) }
 
         val image = client.get("/api/quizzes/${quiz.quizId}/image") {
             header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
@@ -130,14 +131,44 @@ class ServerTest {
         val client = webClient()
         val first = client.get("/api/quizzes/flag/random") {
             header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
-        }.let { Json.decodeFromString<FlagQuiz>(it.bodyAsText()) }
+        }.let { Json.decodeFromString<QuizQuestion>(it.bodyAsText()) }
 
         repeat(10) {
             val next = client.get("/api/quizzes/flag/random?exclude=${first.quizId}") {
                 header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
-            }.let { Json.decodeFromString<FlagQuiz>(it.bodyAsText()) }
+            }.let { Json.decodeFromString<QuizQuestion>(it.bodyAsText()) }
             assertNotEquals(first.quizId, next.quizId)
         }
+    }
+
+    @Test
+    fun `language quiz api returns native names and judges answer`() = testApplication {
+        configure()
+        val client = webClient()
+
+        val quiz = client.get("/api/quizzes/language/random") {
+            header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+        }.let { Json.decodeFromString<QuizQuestion>(it.bodyAsText()) }
+        val names = assertNotNull(quiz.hintText).split(LANGUAGE_QUIZ_NAME_SEPARATOR)
+        assertTrue(names.all { it.isNotBlank() }, names.toString())
+
+        val result = client.post("/api/quizzes/${quiz.quizId}/answer") {
+            header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+            contentType(ContentType.Application.Json)
+            setBody("{\"countryId\":-1}")
+        }.let { Json.decodeFromString<AnswerResult>(it.bodyAsText()) }
+        assertFalse(result.correct)
+        // 現地語の国名に、答えの国名（日本語名・英語名）そのものは含めない
+        assertFalse(result.answer.matchedName in names, "${result.answer} / $names")
+    }
+
+    @Test
+    fun `unknown quiz topic returns 404`() = testApplication {
+        configure()
+        val response = webClient().get("/api/quizzes/unknown/random") {
+            header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+        }
+        assertEquals(HttpStatusCode.NotFound, response.status)
     }
 
     @Test

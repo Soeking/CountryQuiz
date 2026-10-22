@@ -3,12 +3,14 @@ package dto
 import kotlinx.serialization.Serializable
 
 /**
- * 国旗クイズ API (/api/quizzes/flag/random) のレスポンス
- * 答えが分からないよう、画像は /api/quizzes/{quizId}/image から別に取得する
+ * 出題 API (/api/quizzes/{topic}/random) のレスポンス
+ * 国旗クイズの画像は、答えが分からないよう /api/quizzes/{quizId}/image から別に取得する
  */
 @Serializable
-data class FlagQuiz(
+data class QuizQuestion(
     val quizId: Long,
+    /** 文字で出題するクイズの出題文（言語クイズでは現地語の国名を 1 行に 1 つ）。国旗クイズでは null */
+    val hintText: String? = null,
 )
 
 /** 回答 API (/api/quizzes/{quizId}/answer) のリクエスト */

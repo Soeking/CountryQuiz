@@ -12,7 +12,9 @@ data class Flag(
 @Serializable
 data class CountryName(
     val common: String,
-    val official: String
+    val official: String,
+    /** 現地語での国名（キーは ISO 639-3 の言語コード  例: "deu"） */
+    val nativeName: Map<String, CountryName> = emptyMap(),
 )
 
 @Serializable

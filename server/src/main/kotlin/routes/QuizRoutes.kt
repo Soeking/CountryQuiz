@@ -1,5 +1,6 @@
 package routes
 
+import db.tables.QuizTopic
 import dto.AnswerRequest
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -9,12 +10,15 @@ import repository.QuizRepository
 
 /** クイズの出題・回答に関する API */
 fun Route.quizRoutes(quizRepository: QuizRepository) {
-    get("/quizzes/flag/random") {
+    // topic は QuizTopic.value  例: /quizzes/flag/random, /quizzes/language/random
+    get("/quizzes/{topic}/random") {
+        val topic = QuizTopic.entries.find { it.value == call.parameters["topic"] }
+            ?: return@get call.respond(HttpStatusCode.NotFound)
         // 出題済みのクイズ id をカンマ区切りで受け取る  例: ?exclude=1,2,3
         val excludeIds = call.request.queryParameters["exclude"].orEmpty()
             .split(",")
             .mapNotNull { it.toLongOrNull() }
-        val quiz = quizRepository.randomFlagQuiz(excludeIds)
+        val quiz = quizRepository.randomQuiz(topic, excludeIds)
             ?: return@get call.respond(HttpStatusCode.NotFound)
         call.respond(quiz)
     }

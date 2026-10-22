@@ -6,7 +6,7 @@ import db.tables.Quiz
 import db.tables.QuizTopic
 import dto.AnswerResult
 import dto.CountryCandidate
-import dto.FlagQuiz
+import dto.QuizQuestion
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.Random
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -14,6 +14,7 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.core.notInList
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -21,23 +22,24 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 class QuizRepository {
 
     /**
-     * 国旗クイズをランダムに 1 問取得する
+     * 指定した種類のクイズをランダムに 1 問取得する
      *
      * @param excludeIds 出題済みのクイズ id（同じ問題を続けて出さないため）
      */
-    fun randomFlagQuiz(excludeIds: List<Long> = emptyList()): FlagQuiz? {
+    fun randomQuiz(topic: QuizTopic, excludeIds: List<Long> = emptyList()): QuizQuestion? {
         return transaction {
             Quiz
-                .select(Quiz.id)
+                .select(Quiz.id, Quiz.hintText)
                 .where {
-                    (Quiz.topic eq QuizTopic.FLAG) and
-                        Quiz.image.isNotNull() and
+                    (Quiz.topic eq topic) and
+                        // 出題する画像も文章もない問題は除く
+                        (Quiz.image.isNotNull() or Quiz.hintText.isNotNull()) and
                         (Quiz.id notInList excludeIds)
                 }
                 .orderBy(Random())
                 .limit(1)
                 .firstOrNull()
-                ?.let { FlagQuiz(quizId = it[Quiz.id].value) }
+                ?.let { QuizQuestion(quizId = it[Quiz.id].value, hintText = it[Quiz.hintText]) }
         }
     }
 

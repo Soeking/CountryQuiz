@@ -1,6 +1,7 @@
 import db.DatabaseFactory
 import db.seed.seedCountries
 import db.seed.seedFlagQuizzes
+import db.seed.seedLanguageQuizzes
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import plugins.configureSecurity
@@ -15,6 +16,7 @@ fun Application.module() {
     DatabaseFactory.init(environment.config.property("database.path").getString())
     seedCountries()
     seedFlagQuizzes()
+    seedLanguageQuizzes()
 
     configureSerialization()
     configureStatusPages()

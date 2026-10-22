@@ -1,8 +1,11 @@
-package screen.flagquiz
+package screen.quiz
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,14 +30,14 @@ import androidx.compose.ui.unit.dp
 
 /** 問題番号と正解数を表示するヘッダー */
 @Composable
-internal fun Header(questionNumber: Int, correctCount: Int, finished: Boolean, onBack: () -> Unit) {
+internal fun Header(title: String, questionNumber: Int, correctCount: Int, finished: Boolean, onBack: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         TextButton(onClick = onBack) { Text("← トップ") }
-        Text(text = "国旗クイズ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(
             text = if (finished) "結果" else "$questionNumber / $QUESTION_COUNT  正解 $correctCount",
             style = MaterialTheme.typography.bodyMedium,
@@ -43,20 +46,43 @@ internal fun Header(questionNumber: Int, correctCount: Int, finished: Boolean, o
     }
 }
 
-/** 国旗画像。読み込み中は image = null */
+/** 問題として表示する内容 */
+internal sealed interface QuestionContent {
+    /** 国旗クイズの画像 */
+    data class Image(val image: ImageBitmap) : QuestionContent
+
+    /** 言語クイズの現地語の国名（1 行に 1 つ） */
+    data class Text(val lines: List<String>) : QuestionContent
+}
+
+/** 問題の表示。読み込み中は content = null */
 @Composable
-internal fun FlagCard(image: ImageBitmap?) {
+internal fun QuestionCard(content: QuestionContent?) {
     Card(modifier = Modifier.fillMaxWidth().height(240.dp)) {
         Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-            if (image == null) {
-                CircularProgressIndicator()
-            } else {
-                Image(
-                    bitmap = image,
+            when (content) {
+                null -> CircularProgressIndicator()
+                is QuestionContent.Image -> Image(
+                    bitmap = content.image,
                     contentDescription = "出題中の国旗",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )
+                is QuestionContent.Text -> Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    content.lines.forEach { line ->
+                        Text(
+                            text = line,
+                            // 公用語の多い国（最大 8 行）でも収まるよう、行が多いときは小さくする
+                            style = if (content.lines.size <= 3) MaterialTheme.typography.headlineMedium
+                            else MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
             }
         }
     }

@@ -30,3 +30,12 @@ data class AdminQuizRequest(
     /** 正解の国 id（先頭がメインの正解、残りが別解）。1 つ以上必要 */
     val answerCountryIds: List<Long>,
 )
+
+/** seed 実行 API (/api/admin/seed) のレスポンス。それぞれ新しく登録した数 */
+@Serializable
+data class SeedResult(
+    val insertedCountries: Int,
+    val insertedFlagQuizzes: Int,
+    val insertedLanguageQuizzes: Int,
+    val insertedCurrencyQuizzes: Int,
+)

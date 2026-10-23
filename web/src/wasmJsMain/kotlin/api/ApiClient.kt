@@ -9,6 +9,7 @@ import dto.AnswerRequest
 import dto.AnswerResult
 import dto.CountryCandidate
 import dto.QuizQuestion
+import dto.SeedResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.js.Js
@@ -144,6 +145,14 @@ object ApiClient {
 
     suspend fun deleteQuiz(quizId: Long) {
         withSession { client.delete("admin/quizzes/$quizId") }
+    }
+
+    /**
+     * seed を実行して、country.json から未登録の国・問題を登録する
+     * 国旗画像の取得に失敗した国があれば、ここで再取得する
+     */
+    suspend fun runSeed(): SeedResult = withSession {
+        client.post("admin/seed").body()
     }
 
     /** 国旗画像（PNG）を登録する */

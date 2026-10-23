@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ import api.apiErrorMessage
 import api.isAdminUnauthorized
 import dto.AdminQuiz
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import model.QuizTopic
 
 /** 入力が止まってから一覧を検索するまでの待ち時間 */
@@ -62,6 +65,28 @@ internal fun ColumnScope.QuizManager(onLoggedOut: () -> Unit) {
     var editing by remember { mutableStateOf<Editing?>(null) }
     // 保存・削除後に一覧（と国旗のサムネイル）を読み込み直すためのキー
     var reloadKey by remember { mutableIntStateOf(0) }
+    var seeding by remember { mutableStateOf(false) }
+    var seedMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    fun runSeed() {
+        if (seeding) return
+        seeding = true
+        seedMessage = null
+        scope.launch {
+            runCatching { ApiClient.runSeed() }
+                .onSuccess {
+                    seedMessage = "seed を実行しました（追加: 国 ${it.insertedCountries} 件、国旗 ${it.insertedFlagQuizzes} 問、" +
+                        "言語 ${it.insertedLanguageQuizzes} 問、通貨 ${it.insertedCurrencyQuizzes} 問）"
+                    reloadKey++
+                }
+                .onFailure {
+                    if (it.isAdminUnauthorized()) return@launch onLoggedOut()
+                    seedMessage = "seed に失敗しました: ${it.apiErrorMessage()}"
+                }
+            seeding = false
+        }
+    }
 
     LaunchedEffect(topic, query, reloadKey) {
         if (query.isNotEmpty()) delay(SEARCH_DEBOUNCE_MILLIS)
@@ -75,6 +100,24 @@ internal fun ColumnScope.QuizManager(onLoggedOut: () -> Unit) {
                 error = it.apiErrorMessage()
             }
     }
+
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = seedMessage ?: "country.json から未登録の問題を追加します（削除した問題は戻りません）",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(12.dp))
+        OutlinedButton(onClick = ::runSeed, enabled = !seeding) {
+            if (seeding) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(if (seeding) "実行中…" else "seed を実行")
+        }
+    }
+    Spacer(Modifier.height(16.dp))
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         QuizTopic.entries.forEach { entry ->

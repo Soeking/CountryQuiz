@@ -7,6 +7,7 @@ import db.seed.seedLanguageQuizzes
 import db.tables.QuizTopic
 import dto.AdminLoginRequest
 import dto.AdminQuizRequest
+import dto.SeedResult
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -14,7 +15,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import kotlinx.coroutines.delay
-import kotlinx.serialization.Serializable
 import plugins.ADMIN_AUTH
 import plugins.AdminPassword
 import plugins.AdminSession
@@ -25,14 +25,6 @@ private const val LOGIN_FAILURE_DELAY_MILLIS = 1000L
 
 /** 国旗画像の最大サイズ */
 private const val MAX_IMAGE_BYTES = 2L * 1024 * 1024
-
-@Serializable
-data class SeedResult(
-    val insertedCountries: Int,
-    val insertedFlagQuizzes: Int,
-    val insertedLanguageQuizzes: Int,
-    val insertedCurrencyQuizzes: Int,
-)
 
 /** 管理用 API。login / logout 以外は管理者ログインが必要 */
 fun Route.adminRoutes(adminPassword: AdminPassword, adminQuizRepository: AdminQuizRepository) {

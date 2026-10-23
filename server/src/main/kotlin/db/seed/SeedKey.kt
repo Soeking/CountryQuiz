@@ -16,6 +16,7 @@ internal fun countrySeedKey(topic: QuizTopic, countryId: Long) = "${topic.value}
 internal fun currencySeedKey(symbol: String) = "${QuizTopic.CURRENCY.value}:symbol:$symbol"
 
 /** 登録済み（削除済みを含む）の seed キー */
+@Suppress("UnusedReceiverParameter") // トランザクション内からしか呼べないようにするためのレシーバー
 internal fun JdbcTransaction.seededKeys(topic: QuizTopic): Set<String> =
     Quiz.select(Quiz.seedKey)
         .where { Quiz.topic eq topic }
@@ -26,6 +27,7 @@ internal fun JdbcTransaction.seededKeys(topic: QuizTopic): Set<String> =
  * seed_key 列を追加する前に seed で登録した問題に、seed キーを付ける
  * 当時は管理画面がなかったので、既存の問題はすべて seed で登録したものとみなせる
  */
+@Suppress("UnusedReceiverParameter") // トランザクション内からしか呼べないようにするためのレシーバー
 internal fun JdbcTransaction.backfillSeedKeys() {
     Quiz.selectAll()
         .where { Quiz.seedKey.isNull() }

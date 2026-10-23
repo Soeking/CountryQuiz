@@ -18,8 +18,8 @@ fun normalizeSearchKey(raw: String): String =
         .replace(Regex("[ìíîï]"), "i")
         .replace(Regex("[òóôõö]"), "o")
         .replace(Regex("[ùúûü]"), "u")
-        .replace(Regex("[ñ]"), "n")
-        .replace(Regex("[ç]"), "c")
+        .replace('ñ', 'n')
+        .replace('ç', 'c')
         .katakanaToHiragana()
         // 残った英数字・ひらがな・漢字・長音記号以外を除去
         .replace(Regex("[^a-z0-9\\p{IsHiragana}\\p{IsHan}ー]"), "")

@@ -41,9 +41,10 @@ import dto.AdminQuiz
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.QuizTopic
+import kotlin.time.Duration.Companion.milliseconds
 
 /** 入力が止まってから一覧を検索するまでの待ち時間 */
-private const val SEARCH_DEBOUNCE_MILLIS = 300L
+private val SEARCH_DEBOUNCE = 300.milliseconds
 
 /** 編集中の問題 */
 private sealed interface Editing {
@@ -89,7 +90,7 @@ internal fun ColumnScope.QuizManager(onLoggedOut: () -> Unit) {
     }
 
     LaunchedEffect(topic, query, reloadKey) {
-        if (query.isNotEmpty()) delay(SEARCH_DEBOUNCE_MILLIS)
+        if (query.isNotEmpty()) delay(SEARCH_DEBOUNCE)
         runCatching { ApiClient.adminQuizzes(topic, query) }
             .onSuccess {
                 quizzes = it

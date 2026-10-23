@@ -28,15 +28,17 @@ kotlin {
     }
 
     sourceSets {
-        val wasmJsMain by getting {
+        // ブラウザの API（window・File など）を呼ぶ画面があるので、モジュール全体で JS 連携 API を使えるようにする
+        all { languageSettings.optIn("kotlin.js.ExperimentalWasmJsInterop") }
+
+        wasmJsMain {
             dependencies {
                 implementation(project(":shared"))
 
-                // compose.* はこう書く
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material3)
+                implementation(libs.compose.ui)
 
                 implementation(libs.navigation.compose)
                 // shared が ktorLibs（3.4.0）を使うので、client も同じバージョンに揃える

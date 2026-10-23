@@ -13,15 +13,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -32,10 +35,14 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import api.ApiClient
 import dto.CountryCandidate
+import kotlinx.browser.document
 import kotlinx.coroutines.delay
+import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
+import kotlin.time.Duration.Companion.milliseconds
 
 /** 入力が止まってから候補を検索するまでの待ち時間 */
-private const val SEARCH_DEBOUNCE_MILLIS = 200L
+private val SEARCH_DEBOUNCE = 200.milliseconds
 
 /** 回答できない国 id（「わからない」を選んだときに正解だけ受け取るために使う） */
 private const val NO_ANSWER_COUNTRY_ID = -1L
@@ -60,7 +67,7 @@ internal fun AnswerInput(quizId: Long, onAnswer: (countryId: Long) -> Unit) {
             candidates = emptyList()
             return@LaunchedEffect
         }
-        delay(SEARCH_DEBOUNCE_MILLIS)
+        delay(SEARCH_DEBOUNCE)
         candidates = runCatching { ApiClient.searchCountries(input.text) }.getOrDefault(emptyList())
         selectedIndex = 0
     }
@@ -117,5 +124,37 @@ internal fun AnswerInput(quizId: Long, onAnswer: (countryId: Long) -> Unit) {
     }
 
     Spacer(Modifier.height(16.dp))
-    TextButton(onClick = { onAnswer(NO_ANSWER_COUNTRY_ID) }) { Text("わからない") }
+    GiveUpButton(onClick = { onAnswer(NO_ANSWER_COUNTRY_ID) })
+}
+
+/**
+ * 「わからない」ボタン。Tab でフォーカスして Enter でも押せる
+ *
+ * 入力欄（IME 用の隠し input 要素）からフォーカスが移ると、ブラウザのフォーカスが Compose の canvas から外れて
+ * キー入力が Compose に届かない。そのため、フォーカス中は document で直接 Enter を受け取る
+ */
+@Composable
+private fun GiveUpButton(onClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    val currentOnClick by rememberUpdatedState(onClick)
+
+    DisposableEffect(focused) {
+        if (!focused) return@DisposableEffect onDispose {}
+        val listener: (Event) -> Unit = { event ->
+            val keyEvent = event as? KeyboardEvent
+            // 押しっぱなし（キーリピート）では押さない
+            if (keyEvent != null && keyEvent.key == "Enter" && !keyEvent.repeat) {
+                keyEvent.preventDefault()
+                currentOnClick()
+            }
+        }
+        // canvas 側でイベントが止められても受け取れるよう、キャプチャフェーズで登録する
+        document.addEventListener("keydown", listener, true)
+        onDispose { document.removeEventListener("keydown", listener, true) }
+    }
+
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.onFocusChanged { focused = it.isFocused },
+    ) { Text("わからない") }
 }

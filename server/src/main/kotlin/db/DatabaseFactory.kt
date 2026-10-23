@@ -21,6 +21,8 @@ object DatabaseFactory {
 
         transaction {
             val hadSeedKey = columnNames(Quiz.tableName).let { it.isEmpty() || Quiz.seedKey.name in it }
+            // 列の追加しかしない小規模な SQLite なので、マイグレーションツールは使わずにこれで済ませる
+            @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
                 Country,
                 CountryName,

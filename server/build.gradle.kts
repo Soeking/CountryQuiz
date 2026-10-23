@@ -22,6 +22,7 @@ val webDistribution by configurations.creating {
 }
 
 val copyWebDistribution by tasks.registering(Sync::class) {
+    description = "web モジュールの wasm ビルド結果を server の resources にコピーする"
     from(webDistribution) { into("web") }
     into(layout.buildDirectory.dir("generated/webResources"))
 }
@@ -55,8 +56,6 @@ dependencies {
     implementation(ktorLibs.server.websockets)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
-    implementation(libs.h2database.h2)
-    implementation(libs.h2database.r2dbc)
     implementation(libs.logback.classic)
     implementation(libs.sqlite.jdbc)
     implementation(libs.ucasoft.ktorSimpleCache)

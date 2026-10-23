@@ -9,12 +9,13 @@ kotlin {
 
     // server（JVM）と web（WasmJs）の両方から参照できるようにする
     jvm()
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
         browser()
     }
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(ktorLibs.serialization.kotlinx.json)
             }

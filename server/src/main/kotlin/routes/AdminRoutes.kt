@@ -19,9 +19,10 @@ import plugins.ADMIN_AUTH
 import plugins.AdminPassword
 import plugins.AdminSession
 import repository.AdminQuizRepository
+import kotlin.time.Duration.Companion.seconds
 
 /** ログインに失敗したときの待ち時間（パスワードの総当たりを遅くする） */
-private const val LOGIN_FAILURE_DELAY_MILLIS = 1000L
+private val LOGIN_FAILURE_DELAY = 1.seconds
 
 /** 国旗画像の最大サイズ */
 private const val MAX_IMAGE_BYTES = 2L * 1024 * 1024
@@ -32,7 +33,7 @@ fun Route.adminRoutes(adminPassword: AdminPassword, adminQuizRepository: AdminQu
         post("/login") {
             val request = call.receive<AdminLoginRequest>()
             if (!adminPassword.matches(request.password)) {
-                delay(LOGIN_FAILURE_DELAY_MILLIS)
+                delay(LOGIN_FAILURE_DELAY)
                 // 401 は web クライアントがセッション切れとみなして再試行するので、403 で返す
                 return@post call.respondText(
                     text = if (adminPassword.configured) "パスワードが違います" else "管理者パスワード（ADMIN_PASSWORD）が設定されていません",

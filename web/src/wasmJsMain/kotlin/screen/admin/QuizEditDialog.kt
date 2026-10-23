@@ -41,9 +41,10 @@ import dto.CountryCandidate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.QuizTopic
+import kotlin.time.Duration.Companion.milliseconds
 
 /** 国の検索で、入力が止まってから候補を検索するまでの待ち時間 */
-private const val COUNTRY_SEARCH_DEBOUNCE_MILLIS = 200L
+private val COUNTRY_SEARCH_DEBOUNCE = 200.milliseconds
 
 /** 選んだ PNG と、そのプレビュー */
 private class PickedImage(val png: ByteArray, val preview: ImageBitmap)
@@ -211,7 +212,7 @@ private fun CountryPicker(excludeIds: Set<Long>, onPicked: (CountryCandidate) ->
             candidates = emptyList()
             return@LaunchedEffect
         }
-        delay(COUNTRY_SEARCH_DEBOUNCE_MILLIS)
+        delay(COUNTRY_SEARCH_DEBOUNCE)
         candidates = runCatching { ApiClient.searchCountries(input) }.getOrDefault(emptyList())
     }
 

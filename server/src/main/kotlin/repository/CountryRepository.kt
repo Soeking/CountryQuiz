@@ -3,7 +3,6 @@ package repository
 import db.tables.Country
 import db.tables.CountryName
 import dto.CountryCandidate
-import org.jetbrains.exposed.v1.core.Join
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
@@ -50,8 +49,6 @@ class CountryRepository {
                 }
         }
     }
-
-    private fun Join.select(columns: Any) {}
 
     /**
      * country_id から表示用の国を取得する

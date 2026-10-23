@@ -5,6 +5,7 @@ import db.seed.seedFlagQuizzes
 import db.seed.seedLanguageQuizzes
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
+import plugins.configureDefaultHeaders
 import plugins.configureSecurity
 import plugins.configureSerialization
 import plugins.configureStatusPages
@@ -20,6 +21,7 @@ fun Application.module() {
     seedLanguageQuizzes()
     seedCurrencyQuizzes()
 
+    configureDefaultHeaders()
     configureSerialization()
     configureStatusPages()
     configureSecurity()

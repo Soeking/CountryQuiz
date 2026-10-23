@@ -41,6 +41,16 @@ class ServerTest {
     }
 
     @Test
+    fun `responses tell search engines not to index`() = testApplication {
+        configure()
+        val page = client.get("/")
+        assertEquals("noindex, nofollow", page.headers["X-Robots-Tag"])
+        assertContains(page.bodyAsText(), "<meta name=\"robots\" content=\"noindex, nofollow\">")
+        // API やエラーのレスポンスにも付ける
+        assertEquals("noindex, nofollow", client.get("/api/countries/search?q=japan").headers["X-Robots-Tag"])
+    }
+
+    @Test
     fun `country search api returns candidates`() = testApplication {
         configure()
         val response = webClient().get("/api/countries/search?q=japan") {

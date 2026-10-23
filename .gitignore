@@ -37,6 +37,8 @@ gradle-app.setting
 
 # Package Files #
 *.jar
+# Gradle Wrapper は ./gradlew の実行に必要なので管理する
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear

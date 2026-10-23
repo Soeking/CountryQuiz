@@ -5,6 +5,7 @@ import db.tables.CountryName
 import dto.CountryCandidate
 import org.jetbrains.exposed.v1.core.Join
 import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -53,7 +54,8 @@ class CountryRepository {
     private fun Join.select(columns: Any) {}
 
     /**
-     * country_id から候補を1件取得する
+     * country_id から表示用の国を取得する
+     * seed で日本語名を先に登録しているので、id が最小の表記を表示名にする（日本語名がない国は英語名）
      */
     fun findById(id: Long): CountryCandidate? {
         return transaction {
@@ -66,6 +68,7 @@ class CountryRepository {
                 )
                 .selectAll()
                 .where { Country.id eq id }
+                .orderBy(CountryName.id to SortOrder.ASC)
                 .firstOrNull()
                 ?.let {
                     CountryCandidate(

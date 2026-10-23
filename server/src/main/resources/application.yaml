@@ -14,3 +14,7 @@ security:
   sessionSignKey: "$?SESSION_SIGN_KEY"
   # HTTPS で公開するときは true にする
   secureCookie: "$SECURE_COOKIE:false"
+
+admin:
+  # 管理画面（/admin）のパスワード。未設定の場合は管理画面にログインできない
+  password: "$?ADMIN_PASSWORD"

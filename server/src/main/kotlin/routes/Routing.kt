@@ -7,20 +7,26 @@ import io.ktor.server.http.content.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import plugins.CLIENT_AUTH
+import plugins.adminPassword
+import repository.AdminQuizRepository
 import repository.CountryRepository
 import repository.QuizRepository
 
 fun Application.configureRouting(
     countryRepository: CountryRepository = CountryRepository(),
     quizRepository: QuizRepository = QuizRepository(),
+    adminQuizRepository: AdminQuizRepository = AdminQuizRepository(),
 ) {
+    val adminPassword = adminPassword()
+
     routing {
         route("/api") {
             // web クライアントからの通信だけを受け付ける
-            authenticate(CLIENT_AUTH) {
+            // 内側の ADMIN_AUTH と組み合わせたときに、片方だけで通らないよう Required にする
+            authenticate(CLIENT_AUTH, strategy = AuthenticationStrategy.Required) {
                 countryRoutes(countryRepository)
                 quizRoutes(quizRepository)
-                adminRoutes()
+                adminRoutes(adminPassword, adminQuizRepository)
             }
             // 未定義の /api/** は SPA にフォールバックさせず 404 を返す
             route("{...}") {

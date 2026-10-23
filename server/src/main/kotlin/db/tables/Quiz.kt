@@ -10,6 +10,13 @@ object Quiz : LongIdTable("quiz") {
         .references(Country.id, onDelete = ReferenceOption.SET_NULL)
     val image = blob("image").nullable()
     val hintText = text("hint_text").nullable()
+    /**
+     * seed で登録した問題の識別キー（管理画面で作った問題は null）
+     * 管理画面で編集・削除しても残すので、seed は同じ問題を登録し直さない
+     */
+    val seedKey = varchar("seed_key", 120).nullable().uniqueIndex()
+    /** 管理画面で削除した問題。seed で復活しないよう、行は消さずに残す */
+    val deleted = bool("deleted").default(false)
 }
 
 enum class QuizTopic(val value: String) {

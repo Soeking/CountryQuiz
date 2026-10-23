@@ -1,26 +1,20 @@
 package repository
 
-import db.tables.Country
-import db.tables.CountryName
 import db.tables.Quiz
 import db.tables.QuizAnswer
 import db.tables.QuizTopic
 import dto.AnswerResult
-import dto.CountryCandidate
 import dto.QuizQuestion
-import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.Random
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.core.notInList
-import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-class QuizRepository {
+class QuizRepository(private val countryRepository: CountryRepository = CountryRepository()) {
 
     /**
      * 指定した種類のクイズをランダムに 1 問取得する
@@ -33,8 +27,9 @@ class QuizRepository {
                 .select(Quiz.id, Quiz.hintText)
                 .where {
                     (Quiz.topic eq topic) and
-                        // 出題する画像も文章もない問題は除く
-                        (Quiz.image.isNotNull() or Quiz.hintText.isNotNull()) and
+                        (Quiz.deleted eq false) and
+                        // 管理画面で画像・出題文をまだ登録していない問題は出さない
+                        (if (topic == QuizTopic.FLAG) Quiz.image.isNotNull() else Quiz.hintText.isNotNull()) and
                         (Quiz.id notInList excludeIds)
                 }
                 .orderBy(Random())
@@ -49,7 +44,7 @@ class QuizRepository {
         return transaction {
             Quiz
                 .select(Quiz.image)
-                .where { Quiz.id eq quizId }
+                .where { (Quiz.id eq quizId) and (Quiz.deleted eq false) }
                 .firstOrNull()
                 ?.get(Quiz.image)
                 ?.bytes
@@ -66,7 +61,7 @@ class QuizRepository {
         return transaction {
             val mainCountryId = Quiz
                 .select(Quiz.countryId)
-                .where { Quiz.id eq quizId }
+                .where { (Quiz.id eq quizId) and (Quiz.deleted eq false) }
                 .firstOrNull()
                 ?.get(Quiz.countryId)
                 ?: return@transaction null
@@ -81,31 +76,11 @@ class QuizRepository {
             // 別解で正解した場合は、回答した国を正解として先に表示する
             val answers = correctCountryIds
                 .sortedByDescending { correct && it == countryId }
-                .mapNotNull(::findDisplayCountry)
+                .mapNotNull(countryRepository::findById)
                 .ifEmpty { return@transaction null }
 
             AnswerResult(correct = correct, answer = answers.first(), otherAnswers = answers.drop(1))
         }
     }
 
-    /** 表示用の国。seed で日本語名を先に登録しているので、id が最小の表記を表示名にする（日本語名がない国は英語名） */
-    private fun findDisplayCountry(countryId: Long): CountryCandidate? =
-        Country
-            .join(
-                otherTable  = CountryName,
-                joinType    = JoinType.INNER,
-                onColumn    = Country.id,
-                otherColumn = CountryName.countryId,
-            )
-            .selectAll()
-            .where { Country.id eq countryId }
-            .orderBy(CountryName.id to SortOrder.ASC)
-            .firstOrNull()
-            ?.let {
-                CountryCandidate(
-                    countryId   = it[Country.id].value,
-                    code        = it[Country.code2],
-                    matchedName = it[CountryName.name],
-                )
-            }
 }

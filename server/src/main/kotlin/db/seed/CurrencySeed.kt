@@ -6,13 +6,8 @@ import db.tables.Quiz
 import db.tables.QuizAnswer
 import db.tables.QuizTopic
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.notInList
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
-import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
@@ -50,7 +45,8 @@ private val LOCAL_SYMBOLS = mapOf(
 /**
  * resources/seed/country.json の通貨記号から通貨クイズを登録する
  * 記号を使っている国はすべて正解にする（1 か国目を Quiz.countryId、残りを QuizAnswer に登録する）
- * 登録済みの記号はスキップするので、何度呼んでもよい（出題しなくなった記号の問題は削除する）
+ * 登録済み（管理画面で削除した問題を含む）の記号はスキップするので、何度呼んでもよい
+ * LOCAL_SYMBOLS で表記を変えても、変える前の記号の問題は残る（不要なら管理画面で削除する）
  * seedCountries の後に呼ぶこと
  *
  * @return 新しく登録した通貨クイズの数
@@ -86,25 +82,15 @@ fun seedCurrencyQuizzes(): Int {
             .mapValues { (_, codes) -> codes.flatMapTo(linkedSetOf()) { currencyCountryIds.getValue(it) } }
             .filterValues { it.size <= MAX_COUNTRIES_PER_SYMBOL }
 
-        // LOCAL_SYMBOLS で表記を変えた記号など、出題しなくなった記号の問題を消す（別解は CASCADE で消える）
-        val deletedCount = Quiz.deleteWhere {
-            (Quiz.topic eq QuizTopic.CURRENCY) and (Quiz.hintText notInList quizSymbols.keys.toList())
-        }
-        if (deletedCount > 0) println("Deleted $deletedCount currency quizzes.")
-
-        val seededSymbols = Quiz
-            .select(Quiz.hintText)
-            .where { Quiz.topic eq QuizTopic.CURRENCY }
-            .mapNotNull { it[Quiz.hintText] }
-            .toSet()
-
+        val seededKeys = seededKeys(QuizTopic.CURRENCY)
         quizSymbols
-            .filterKeys { it !in seededSymbols }
+            .filterKeys { currencySeedKey(it) !in seededKeys }
             .onEach { (symbol, answerCountryIds) ->
                 val quizId = Quiz.insertAndGetId {
                     it[topic] = QuizTopic.CURRENCY
                     it[countryId] = answerCountryIds.first()
                     it[hintText] = symbol
+                    it[seedKey] = currencySeedKey(symbol)
                 }
                 answerCountryIds.drop(1).forEach { answerCountryId ->
                     QuizAnswer.insert {

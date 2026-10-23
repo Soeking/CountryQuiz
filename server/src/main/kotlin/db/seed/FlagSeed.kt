@@ -5,10 +5,8 @@ import db.tables.Country
 import db.tables.Quiz
 import db.tables.QuizTopic
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.api.ExposedBlob
 import org.jetbrains.exposed.v1.jdbc.insert
-import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.net.URI
@@ -29,7 +27,7 @@ private val httpClient = HttpClient.newBuilder()
 
 /**
  * resources/seed/country.json の国旗画像 URL から画像を 1 件ずつ取得して国旗クイズを登録する
- * 国旗クイズ登録済みの国はスキップするので、何度呼んでもよい（取得に失敗した国は次回再試行される）
+ * 登録済み（管理画面で削除した問題を含む）の国はスキップするので、何度呼んでもよい（取得に失敗した国は次回再試行される）
  * seedCountries の後に呼ぶこと
  *
  * @return 新しく登録した国旗クイズの数
@@ -42,15 +40,10 @@ fun seedFlagQuizzes(): Int {
 
     // 国旗クイズ未登録の国（id, 正式名称）
     val targets = transaction {
-        val seededCountryIds = Quiz
-            .select(Quiz.countryId)
-            .where { Quiz.topic eq QuizTopic.FLAG }
-            .map { it[Quiz.countryId] }
-            .toSet()
-
+        val seededKeys = seededKeys(QuizTopic.FLAG)
         Country.selectAll()
             .map { it[Country.id].value to it[Country.officialName] }
-            .filter { (id, _) -> id !in seededCountryIds }
+            .filter { (id, _) -> countrySeedKey(QuizTopic.FLAG, id) !in seededKeys }
     }
 
     // ダウンロード中に DB をロックし続けないよう、1 件ずつ取得してから登録する
@@ -66,6 +59,7 @@ fun seedFlagQuizzes(): Int {
                 it[topic] = QuizTopic.FLAG
                 it[countryId] = id
                 it[Quiz.image] = ExposedBlob(image)
+                it[seedKey] = countrySeedKey(QuizTopic.FLAG, id)
             }
         }
         true

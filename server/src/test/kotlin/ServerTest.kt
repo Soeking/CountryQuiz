@@ -78,17 +78,6 @@ class ServerTest {
     }
 
     @Test
-    fun `seed api skips already seeded countries`() = testApplication {
-        configure()
-        // 起動時に seed 済みなので、追加で登録される国・国旗クイズはない
-        val response = webClient().post("/api/admin/seed") {
-            header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
-        }
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("{\"insertedCountries\":0,\"insertedFlagQuizzes\":0,\"insertedLanguageQuizzes\":0,\"insertedCurrencyQuizzes\":0}", response.bodyAsText())
-    }
-
-    @Test
     fun `api rejects request without session cookie`() = testApplication {
         configure()
         val response = client.get("/api/countries/search?q=japan") {

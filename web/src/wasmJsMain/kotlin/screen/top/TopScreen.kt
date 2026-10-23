@@ -33,7 +33,7 @@ fun TopScreen(onTopicSelected: (QuizTopic) -> Unit) {
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "QuizeCountry",
+                text = "CountryQuiz",
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold,
             )

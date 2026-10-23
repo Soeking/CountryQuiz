@@ -1,3 +1,3 @@
-# QuizeCountry
+# CountryQuiz
 
 TODO: write this

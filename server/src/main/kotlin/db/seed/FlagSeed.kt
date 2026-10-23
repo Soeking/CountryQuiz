@@ -74,7 +74,7 @@ private fun downloadImage(url: String): ByteArray? {
     val request = HttpRequest.newBuilder(URI(url))
         .timeout(Duration.ofSeconds(30))
         // Wikimedia は User-Agent のないリクエストを拒否する
-        .header("User-Agent", "QuizeCountry/1.0")
+        .header("User-Agent", "CountryQuiz/1.0")
         .build()
 
     return runCatching { httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray()) }

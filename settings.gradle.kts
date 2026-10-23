@@ -1,4 +1,4 @@
-rootProject.name = "QuizeCountry"
+rootProject.name = "CountryQuiz"
 
 pluginManagement {
     repositories {

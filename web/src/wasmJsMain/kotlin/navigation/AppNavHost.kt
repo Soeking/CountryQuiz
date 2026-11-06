@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import kotlinx.browser.window
+import model.AnswerMode
 import model.QuizTopic
 import screen.admin.AdminScreen
 import screen.quiz.QuizScreen
@@ -21,9 +22,12 @@ private object AdminRoute
 /** 管理画面を開く URL のパス */
 private const val ADMIN_PATH = "/admin"
 
-/** @param topicName QuizTopic の name */
+/**
+ * @param topicName QuizTopic の name
+ * @param modeName AnswerMode の name
+ */
 @Serializable
-private data class QuizRoute(val topicName: String)
+private data class QuizRoute(val topicName: String, val modeName: String)
 
 /** 画面遷移の定義 */
 @Composable
@@ -36,14 +40,16 @@ fun AppNavHost() {
     NavHost(navController = navController, startDestination = startDestination) {
         composable<TopRoute> {
             TopScreen(
-                onTopicSelected = { topic ->
-                    navController.navigate(QuizRoute(topic.name))
+                onTopicSelected = { topic, mode ->
+                    navController.navigate(QuizRoute(topic.name, mode.name))
                 },
             )
         }
         composable<QuizRoute> { entry ->
+            val route = entry.toRoute<QuizRoute>()
             QuizScreen(
-                topic = QuizTopic.valueOf(entry.toRoute<QuizRoute>().topicName),
+                topic = QuizTopic.valueOf(route.topicName),
+                mode = AnswerMode.valueOf(route.modeName),
                 onBack = { navController.popBackStack() },
             )
         }

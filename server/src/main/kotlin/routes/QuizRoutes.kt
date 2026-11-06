@@ -8,6 +8,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import repository.QuizRepository
 
+/** 4 択モードで返す選択肢の最大数 */
+private const val MAX_CHOICE_COUNT = 8
+
 /** クイズの出題・回答に関する API */
 fun Route.quizRoutes(quizRepository: QuizRepository) {
     // topic は QuizTopic.value  例: /quizzes/flag/random, /quizzes/language/random
@@ -18,7 +21,11 @@ fun Route.quizRoutes(quizRepository: QuizRepository) {
         val excludeIds = call.request.queryParameters["exclude"].orEmpty()
             .split(",")
             .mapNotNull { it.toLongOrNull() }
-        val quiz = quizRepository.randomQuiz(topic, excludeIds)
+        // 4 択モードでは選択肢の数を受け取る  例: ?choices=4
+        val choiceCount = call.request.queryParameters["choices"]?.toIntOrNull()
+            ?.coerceIn(0, MAX_CHOICE_COUNT)
+            ?: 0
+        val quiz = quizRepository.randomQuiz(topic, excludeIds, choiceCount)
             ?: return@get call.respond(HttpStatusCode.NotFound)
         call.respond(quiz)
     }

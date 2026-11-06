@@ -4,9 +4,12 @@ import db.tables.Country
 import db.tables.CountryName
 import dto.CountryCandidate
 import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.Random
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.core.notInList
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import util.normalizeSearchKey
@@ -75,5 +78,22 @@ class CountryRepository {
                     )
                 }
         }
+    }
+
+    /**
+     * ランダムに国を取得する（4 択モードの不正解の選択肢に使う）
+     *
+     * @param excludeIds 選ばない国 id（正解の国）
+     */
+    fun randomCountries(count: Int, excludeIds: List<Long>): List<CountryCandidate> {
+        if (count <= 0) return emptyList()
+        return transaction {
+            Country
+                .select(Country.id)
+                .where { Country.id notInList excludeIds }
+                .orderBy(Random())
+                .limit(count)
+                .map { it[Country.id].value }
+        }.mapNotNull(::findById)
     }
 }

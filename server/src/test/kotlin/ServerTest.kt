@@ -2,6 +2,9 @@ import auth.CLIENT_HEADER_NAME
 import auth.CLIENT_HEADER_VALUE
 import dto.AnswerResult
 import db.seed.LANGUAGE_QUIZ_NAME_SEPARATOR
+import db.seed.seedCountries
+import db.tables.Country
+import db.tables.CountryName
 import db.tables.Quiz
 import db.tables.QuizTopic
 import dto.QuizQuestion
@@ -18,10 +21,14 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
+import repository.CountryRepository
 import kotlin.test.*
 
 class ServerTest {
@@ -213,6 +220,69 @@ class ServerTest {
         assertTrue(symbols.containsAll(listOf("CHF", "ден", "1.000$00")), symbols.toString())
         // country.json の表記（現地では使われていない）は出題しない
         assertTrue(symbols.none { it in listOf("Fr.", "B/.", "Esc", "den") }, symbols.toString())
+    }
+
+    @Test
+    fun `quiz api returns choices including exactly one answer`() = testApplication {
+        configure()
+        val client = webClient()
+
+        // 入力モードでは選択肢を返さない
+        val plain = client.get("/api/quizzes/flag/random") {
+            header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+        }.let { Json.decodeFromString<QuizQuestion>(it.bodyAsText()) }
+        assertTrue(plain.choices.isEmpty())
+
+        // 「¥」以外の通貨クイズを除外して、別解のある問題を必ず出題させる
+        val otherQuizIds = transaction {
+            Quiz.select(Quiz.id, Quiz.hintText).where { Quiz.topic eq QuizTopic.CURRENCY }
+                .filter { it[Quiz.hintText] != "¥" }
+                .map { it[Quiz.id].value }
+        }
+        repeat(5) {
+            val quiz = client.get("/api/quizzes/currency/random?choices=4&exclude=${otherQuizIds.joinToString(",")}") {
+                header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+            }.let { Json.decodeFromString<QuizQuestion>(it.bodyAsText()) }
+            assertEquals(4, quiz.choices.size)
+            assertEquals(4, quiz.choices.map { it.countryId }.toSet().size, quiz.choices.toString())
+
+            val results = quiz.choices.map { choice ->
+                client.post("/api/quizzes/${quiz.quizId}/answer") {
+                    header(CLIENT_HEADER_NAME, CLIENT_HEADER_VALUE)
+                    contentType(ContentType.Application.Json)
+                    setBody("{\"countryId\":${choice.countryId}}")
+                }.let { Json.decodeFromString<AnswerResult>(it.bodyAsText()) }
+            }
+            // 別解のある問題（「¥」の日本・中国）でも、正解の選択肢は 1 つだけ
+            assertEquals(1, results.count { it.correct }, quiz.choices.toString())
+        }
+    }
+
+    @Test
+    fun `seed fixes mistranslated japanese country names`() = testApplication {
+        configure()
+        // DB の初期化・seed はアプリの起動時に行われる
+        startApplication()
+        val jerseyNameId = transaction {
+            Country.join(CountryName, JoinType.INNER, Country.id, CountryName.countryId)
+                .select(CountryName.id)
+                .where { Country.code2 eq "JE" }
+                .orderBy(CountryName.id to SortOrder.ASC)
+                .first()[CountryName.id]
+        }
+        // 誤訳のまま登録済みの DB を再現する
+        transaction {
+            CountryName.update({ CountryName.id eq jerseyNameId }) {
+                it[CountryName.name] = "ジャージの得意分野"
+                it[CountryName.searchKey] = "ジャージの得意分野"
+            }
+        }
+
+        seedCountries()
+
+        val jersey = assertNotNull(CountryRepository().search("ジャージー").firstOrNull { it.code == "JE" })
+        assertEquals("ジャージー代官管轄区", jersey.matchedName)
+        assertTrue(CountryRepository().search("得意分野").isEmpty())
     }
 
     @Test

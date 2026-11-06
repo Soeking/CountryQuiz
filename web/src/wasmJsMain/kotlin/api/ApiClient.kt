@@ -74,10 +74,12 @@ object ApiClient {
      * 指定した種類のクイズをランダムに 1 問取得する
      *
      * @param excludeIds 出題済みのクイズ id
+     * @param choiceCount 4 択モードの選択肢の数。0 なら選択肢を受け取らない
      */
-    suspend fun randomQuiz(topic: QuizTopic, excludeIds: List<Long>): QuizQuestion = withSession {
+    suspend fun randomQuiz(topic: QuizTopic, excludeIds: List<Long>, choiceCount: Int = 0): QuizQuestion = withSession {
         client.get("quizzes/${topic.apiPath}/random") {
             if (excludeIds.isNotEmpty()) parameter("exclude", excludeIds.joinToString(","))
+            if (choiceCount > 0) parameter("choices", choiceCount)
         }.body()
     }
 

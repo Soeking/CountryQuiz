@@ -5,6 +5,7 @@ import db.seed.json.CountryWithName
 import db.tables.Country
 import db.tables.CountryName
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.insertIgnoreAndGetId
@@ -61,8 +62,35 @@ fun seedCountries(): Int {
     }
 
     println("Seeded $insertedCount of ${countryWithCodes.size} countries.")
+    syncDisplayNames(countryWithCodes, countryWithNames)
     refreshSearchKeys()
     return insertedCount
+}
+
+/**
+ * 登録済みの国の表示名（国ごとに id が最小の国名候補）を、country.json の日本語の正式名称に合わせる
+ * country.json の誤訳（例:「ジャージの得意分野」）を直したときに、登録済みの国にも反映するため
+ * search_key は直後の refreshSearchKeys で作り直す
+ */
+private fun syncDisplayNames(countryWithCodes: List<CountryWithCode>, countryWithNames: List<CountryWithName>) {
+    val updatedCount = transaction {
+        countryWithCodes.count { code ->
+            val expected = countryWithNames.firstOrNull { it.name.official == code.name.official }
+                ?.let { it.translations.jpn?.official ?: it.name.official }
+                ?: return@count false
+            val countryId = Country.selectAll().where { Country.code2 eq code.cca2 }.firstOrNull()?.get(Country.id)?.value
+                ?: return@count false
+            val displayName = CountryName.selectAll()
+                .where { CountryName.countryId eq countryId }
+                .orderBy(CountryName.id to SortOrder.ASC)
+                .firstOrNull()
+                ?: return@count false
+            if (displayName[CountryName.name] == expected) return@count false
+            CountryName.update({ CountryName.id eq displayName[CountryName.id] }) { it[CountryName.name] = expected }
+            true
+        }
+    }
+    if (updatedCount > 0) println("Updated $updatedCount country display names.")
 }
 
 /**

@@ -11,6 +11,11 @@ data class QuizQuestion(
     val quizId: Long,
     /** 文字で出題するクイズの出題文（言語クイズでは現地語の国名を 1 行に 1 つ）。国旗クイズでは null */
     val hintText: String? = null,
+    /**
+     * 4 択モードの選択肢（正解 1 つと不正解の国を混ぜた順）。?choices= を指定しなかった場合は空
+     * どれが正解かは含めず、回答 API で判定する
+     */
+    val choices: List<CountryCandidate> = emptyList(),
 )
 
 /** 回答 API (/api/quizzes/{quizId}/answer) のリクエスト */

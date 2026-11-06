@@ -23,8 +23,10 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import api.ApiClient
 import dto.AnswerResult
+import dto.CountryCandidate
 import dto.QuizQuestion
 import kotlinx.coroutines.launch
+import model.AnswerMode
 import model.QuizTopic
 
 /** 1 回のプレイで出題する問題数 */
@@ -34,19 +36,21 @@ internal const val QUESTION_COUNT = 10
 private sealed interface QuestionState {
     data object Loading : QuestionState
     data class Error(val message: String) : QuestionState
-    data class Answering(val quizId: Long, val content: QuestionContent) : QuestionState
+    /** @param choices 4 択モードの選択肢。入力モードでは空 */
+    data class Answering(val quizId: Long, val content: QuestionContent, val choices: List<CountryCandidate>) : QuestionState
     data class Answered(val quizId: Long, val content: QuestionContent, val result: AnswerResult) : QuestionState
 }
 
 /**
  * クイズ画面
- * 問題（国旗・現地語の国名など）を見て国名を入力し、候補から選んで回答する。QUESTION_COUNT 問で結果を表示する
+ * 問題（国旗・現地語の国名など）を見て、国名を入力して候補から選ぶか、4 択から選んで回答する。QUESTION_COUNT 問で結果を表示する
  *
  * @param topic 出題するクイズの種類
+ * @param mode 回答のしかた
  * @param onBack トップ画面に戻るときに呼ばれる
  */
 @Composable
-fun QuizScreen(topic: QuizTopic, onBack: () -> Unit) {
+fun QuizScreen(topic: QuizTopic, mode: AnswerMode, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val askedQuizIds = remember { mutableStateListOf<Long>() }
     var correctCount by remember { mutableIntStateOf(0) }
@@ -57,10 +61,10 @@ fun QuizScreen(topic: QuizTopic, onBack: () -> Unit) {
         state = QuestionState.Loading
         scope.launch {
             state = runCatching {
-                val quiz = ApiClient.randomQuiz(topic = topic, excludeIds = askedQuizIds)
+                val quiz = ApiClient.randomQuiz(topic = topic, excludeIds = askedQuizIds, choiceCount = mode.choiceCount)
                 val content = loadContent(quiz)
                 askedQuizIds += quiz.quizId
-                QuestionState.Answering(quizId = quiz.quizId, content = content)
+                QuestionState.Answering(quizId = quiz.quizId, content = content, choices = quiz.choices)
             }.getOrElse {
                 println("Failed to load ${topic.name} quiz: $it")
                 QuestionState.Error("問題を取得できませんでした\n$it")
@@ -101,7 +105,7 @@ fun QuizScreen(topic: QuizTopic, onBack: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Header(
-                    title = "${topic.label}クイズ",
+                    title = "${topic.label}クイズ（${mode.label}）",
                     questionNumber = askedQuizIds.size,
                     correctCount = correctCount,
                     finished = finished,
@@ -118,11 +122,19 @@ fun QuizScreen(topic: QuizTopic, onBack: () -> Unit) {
                         is QuestionState.Answering -> {
                             QuestionCard(content = current.content)
                             Spacer(Modifier.height(24.dp))
-                            AnswerInput(
-                                // 問題が変わったら入力欄をリセットする
-                                quizId = current.quizId,
-                                onAnswer = { answer(current.quizId, current.content, it) },
-                            )
+                            val onAnswer = { countryId: Long -> answer(current.quizId, current.content, countryId) }
+                            when (mode) {
+                                AnswerMode.INPUT -> AnswerInput(
+                                    // 問題が変わったら入力欄をリセットする
+                                    quizId = current.quizId,
+                                    onAnswer = onAnswer,
+                                )
+                                AnswerMode.CHOICE -> AnswerChoices(
+                                    quizId = current.quizId,
+                                    choices = current.choices,
+                                    onAnswer = onAnswer,
+                                )
+                            }
                         }
                         is QuestionState.Answered -> {
                             QuestionCard(content = current.content)

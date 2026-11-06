@@ -26,23 +26,62 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** 問題番号と正解数を表示するヘッダー */
+/**
+ * 問題番号と正解数を表示するヘッダー
+ *
+ * @param compact 幅の狭い画面（スマホ）では、1 行に収まらないのでタイトルを 2 段目に置く
+ */
 @Composable
-internal fun Header(title: String, questionNumber: Int, correctCount: Int, finished: Boolean, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        TextButton(onClick = onBack) { Text("← トップ") }
-        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+internal fun Header(
+    title: String,
+    questionNumber: Int,
+    correctCount: Int,
+    finished: Boolean,
+    compact: Boolean,
+    onBack: () -> Unit,
+) {
+    val progress: @Composable () -> Unit = {
         Text(
             text = if (finished) "結果" else "$questionNumber / $QUESTION_COUNT  正解 $correctCount",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
         )
+    }
+    val titleText: @Composable () -> Unit = {
+        Text(
+            text = title,
+            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+    }
+
+    if (compact) {
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TextButton(onClick = onBack) { Text("← トップ") }
+                progress()
+            }
+            titleText()
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            TextButton(onClick = onBack) { Text("← トップ") }
+            titleText()
+            progress()
+        }
     }
 }
 
@@ -58,10 +97,14 @@ internal sealed interface QuestionContent {
     data class Text(val lines: List<String>) : QuestionContent
 }
 
-/** 問題の表示。読み込み中は content = null */
+/**
+ * 問題の表示。読み込み中は content = null
+ *
+ * @param height カードの高さ。画面の高さが足りないときは小さくする
+ */
 @Composable
-internal fun QuestionCard(content: QuestionContent?) {
-    Card(modifier = Modifier.fillMaxWidth().height(240.dp)) {
+internal fun QuestionCard(content: QuestionContent?, height: Dp = 240.dp) {
+    Card(modifier = Modifier.fillMaxWidth().height(height)) {
         Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
             when (content) {
                 null -> CircularProgressIndicator()

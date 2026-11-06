@@ -1,13 +1,18 @@
 package screen.top
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
@@ -38,30 +43,40 @@ fun TopScreen(onTopicSelected: (QuizTopic, AnswerMode) -> Unit) {
     var mode by rememberSaveable { mutableStateOf(AnswerMode.INPUT) }
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = "CountryQuiz",
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "クイズの種類を選んでください",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(32.dp))
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            // displayMedium だと幅の狭いスマホ（320dp）で折り返すので、1 段小さくする
+            val titleStyle = if (maxWidth < 400.dp) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayMedium
+            Column(
+                // 高さが足りない画面（スマホの横向きなど）ではスクロールできるようにする。
+                // スクロールすると高さの制約がなくなり中央寄せが効かないので、最小の高さを画面の高さにする
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxWidth()
+                    .heightIn(min = maxHeight)
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = "CountryQuiz",
+                    style = titleStyle,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "クイズの種類を選んでください",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(32.dp))
 
-            AnswerModeSelector(selected = mode, onSelect = { mode = it })
-            Spacer(Modifier.height(24.dp))
+                AnswerModeSelector(selected = mode, onSelect = { mode = it })
+                Spacer(Modifier.height(24.dp))
 
-            QuizTopic.entries.forEach { topic ->
-                TopicButton(topic = topic, onClick = { onTopicSelected(topic, mode) })
-                Spacer(Modifier.height(16.dp))
+                QuizTopic.entries.forEach { topic ->
+                    TopicButton(topic = topic, onClick = { onTopicSelected(topic, mode) })
+                    Spacer(Modifier.height(16.dp))
+                }
             }
         }
     }
@@ -76,7 +91,7 @@ fun TopScreen(onTopicSelected: (QuizTopic, AnswerMode) -> Unit) {
 @Composable
 private fun AnswerModeSelector(selected: AnswerMode, onSelect: (AnswerMode) -> Unit) {
     Row(
-        modifier = Modifier.width(320.dp),
+        modifier = Modifier.widthIn(max = 320.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AnswerMode.entries.forEach { mode ->
@@ -94,7 +109,7 @@ private fun AnswerModeSelector(selected: AnswerMode, onSelect: (AnswerMode) -> U
 private fun TopicButton(topic: QuizTopic, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = Modifier.width(320.dp),
+        modifier = Modifier.widthIn(max = 320.dp).fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(vertical = 8.dp),

@@ -2,6 +2,9 @@ package screen.quiz
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,6 +61,7 @@ internal fun AnswerInput(quizId: Long, onAnswer: (countryId: Long) -> Unit) {
     var candidates by remember(quizId) { mutableStateOf(emptyList<CountryCandidate>()) }
     var selectedIndex by remember(quizId) { mutableIntStateOf(0) }
     val focusRequester = remember { FocusRequester() }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     // 問題が出たらすぐ入力できるようにする
     LaunchedEffect(quizId) { focusRequester.requestFocus() }
@@ -72,53 +76,60 @@ internal fun AnswerInput(quizId: Long, onAnswer: (countryId: Long) -> Unit) {
         selectedIndex = 0
     }
 
-    OutlinedTextField(
-        value = input,
-        onValueChange = { input = it },
-        label = { Text("国名を入力") },
-        singleLine = true,
-        modifier = Modifier
-            .fillMaxWidth()
-            .focusRequester(focusRequester)
-            .onPreviewKeyEvent { event ->
-                // 変換中の Enter・矢印キーは IME の操作なので横取りしない
-                if (event.type != KeyEventType.KeyDown || input.composition != null || candidates.isEmpty()) {
-                    return@onPreviewKeyEvent false
-                }
-                when (event.key) {
-                    Key.DirectionDown -> {
-                        selectedIndex = (selectedIndex + 1) % candidates.size
-                        true
-                    }
-                    Key.DirectionUp -> {
-                        selectedIndex = (selectedIndex - 1 + candidates.size) % candidates.size
-                        true
-                    }
-                    Key.Enter, Key.NumPadEnter -> {
-                        onAnswer(candidates[selectedIndex].countryId)
-                        true
-                    }
-                    else -> false
-                }
-            },
-    )
+    // スマホでソフトキーボードが開いていると、候補が画面の下に隠れてしまう。候補が出たら入力欄と候補が見えるまでスクロールする
+    LaunchedEffect(candidates) {
+        if (candidates.isNotEmpty()) bringIntoViewRequester.bringIntoView()
+    }
 
-    if (candidates.isNotEmpty()) {
-        Card(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            candidates.forEachIndexed { index, candidate ->
-                if (index > 0) HorizontalDivider()
-                Text(
-                    text = candidate.matchedName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            if (index == selectedIndex) MaterialTheme.colorScheme.secondaryContainer
-                            else Color.Transparent
-                        )
-                        .clickable { onAnswer(candidate.countryId) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                )
+    Column(modifier = Modifier.fillMaxWidth().bringIntoViewRequester(bringIntoViewRequester)) {
+        OutlinedTextField(
+            value = input,
+            onValueChange = { input = it },
+            label = { Text("国名を入力") },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+                .onPreviewKeyEvent { event ->
+                    // 変換中の Enter・矢印キーは IME の操作なので横取りしない
+                    if (event.type != KeyEventType.KeyDown || input.composition != null || candidates.isEmpty()) {
+                        return@onPreviewKeyEvent false
+                    }
+                    when (event.key) {
+                        Key.DirectionDown -> {
+                            selectedIndex = (selectedIndex + 1) % candidates.size
+                            true
+                        }
+                        Key.DirectionUp -> {
+                            selectedIndex = (selectedIndex - 1 + candidates.size) % candidates.size
+                            true
+                        }
+                        Key.Enter, Key.NumPadEnter -> {
+                            onAnswer(candidates[selectedIndex].countryId)
+                            true
+                        }
+                        else -> false
+                    }
+                },
+        )
+
+        if (candidates.isNotEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                candidates.forEachIndexed { index, candidate ->
+                    if (index > 0) HorizontalDivider()
+                    Text(
+                        text = candidate.matchedName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (index == selectedIndex) MaterialTheme.colorScheme.secondaryContainer
+                                else Color.Transparent
+                            )
+                            .clickable { onAnswer(candidate.countryId) }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                }
             }
         }
     }

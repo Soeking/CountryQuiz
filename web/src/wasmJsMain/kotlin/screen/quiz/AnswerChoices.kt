@@ -53,7 +53,7 @@ internal fun AnswerChoices(quizId: Long, choices: List<CountryCandidate>, onAnsw
         onDispose { document.removeEventListener("keydown", listener, true) }
     }
 
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEachIndexed { index, choice ->
             OutlinedButton(
                 onClick = { select(choice.countryId) },
